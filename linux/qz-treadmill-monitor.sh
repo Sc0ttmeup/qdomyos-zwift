@@ -107,7 +107,6 @@ manage_service() {
 }
 
 while true; do
-    local current_time
     current_time=$(date +%s)
     if [ $((current_time - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
         log "Checking for treadmill status..."
