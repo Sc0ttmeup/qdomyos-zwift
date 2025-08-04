@@ -1,0 +1,14 @@
+[Unit]
+Description=qdomyos-zwift service
+After=multi-user.target
+
+[Service]
+Type=idle  
+Restart=always
+RestartSec=30
+ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -no-log
+ExecStop=killall -9 qdomyos-zwift
+User=root  
+
+[Install]  
+WantedBy=multi-user.target 
