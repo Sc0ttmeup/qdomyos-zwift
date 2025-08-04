@@ -6,7 +6,8 @@ After=multi-user.target
 Type=idle  
 Restart=always
 RestartSec=30
-ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -no-log
+WorkingDirectory=/tmp
+ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -heart-service
 ExecStop=killall -9 qdomyos-zwift
 User=root  
 
