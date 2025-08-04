@@ -13,6 +13,7 @@ DEBUG_LOG_DIR="/tmp"
 ERROR_MESSAGE="BTLE stateChanged InvalidService"
 LAST_SEEN=0
 LAST_SCANNED=0
+LAST_POLLED=0
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
@@ -36,7 +37,7 @@ scan_for_device() {
     trap "kill $SCAN_PID" EXIT
     trap "kill $MONITOR_PID" EXIT
 
-    sleep 5
+    sleep $POLL_INTERVAL
 
     grep -q "Name (complete): $TARGET_DEVICE" "$SCAN_FILE"
     DEVICE_FOUND=$?
@@ -106,12 +107,14 @@ manage_service() {
 }
 
 while true; do
-    log "Checking for treadmill status..."
-    if scan_for_device; then
-        manage_service true
-    else
-        manage_service false
+    local current_time
+    current_time=$(date +%s)
+    if [ $((current_time - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
+        log "Checking for treadmill status..."
+        if scan_for_device; then
+            manage_service true
+        else
+            manage_service false
+        fi
     fi
-    log "Waiting for $POLL_INTERVAL seconds before next check..."
-    sleep "$POLL_INTERVAL"
 done
