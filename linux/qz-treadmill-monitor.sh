@@ -25,6 +25,11 @@ is_service_running() {
     return $?
 }
 
+reset_bluetooth(){
+    modprobe -r btusb                        # Reset bluetooth stack
+    modprobe btusb                           # Reset bluetooth stack
+}
+
 scan_for_device() {
     log "Starting Bluetooth scan for $TARGET_DEVICE..."
 
@@ -73,6 +78,7 @@ restart_qz_on_error() {
     if grep -q "$ERROR_MESSAGE" "$LATEST_LOG"; then
         log "***** Error detected in QZ log: $ERROR_MESSAGE *****"
         log "Restarting QZ service..."
+        reset_bluetooth()
         systemctl restart "$SERVICE_NAME"
     else
         log "No errors detected in $LATEST_LOG."
@@ -86,6 +92,7 @@ local device_found=$1
             if ! is_service_running; then
                 log "***** Starting QZ service... *****"
                 rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
+                reset_bluetooth()
                 systemctl start "$SERVICE_NAME"
             else
                 log "QZ service is already running."
