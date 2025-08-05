@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x # Debug output - uncomment to enable
+set -x # Debug output - uncomment to enable
 
 LOG_FILE="/tmp/qz-treadmill-monitor.log"
 SCAN_FILE="/tmp/qz-treadmill-monitor-btmon.log"
@@ -85,7 +85,7 @@ local device_found=$1
         if $device_found; then
             if ! is_service_running; then
                 log "***** Starting QZ service... *****"
-		rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
+                rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
                 systemctl start "$SERVICE_NAME"
             else
                 log "QZ service is already running."
@@ -100,8 +100,8 @@ local device_found=$1
     if [ $((CURRENT_TIME - LAST_SEEN)) -ge $TIMEOUT_INTERVAL ]; then
         log "Device not seen for more than $TIMEOUT_INTERVAL seconds."
         if is_service_running; then
-            log "***** Forcing QZ service restart due to TIMEOUT_INTERVAL *****"
-            systemctl restart "$SERVICE_NAME"
+            log "***** Stopping $SERVICE_NAME service *****"
+            systemctl stop "$SERVICE_NAME"
         else
             log "QZ service is not running; no action taken."
         fi
@@ -110,13 +110,13 @@ local device_found=$1
 
 while true; do
     CURRENT_TIME=$(date +%s)
-	if [ $((CURRENT_TIME - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
-	    log "Checking for treadmill status..."
+        if [ $((CURRENT_TIME - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
+            log "Checking for treadmill status..."
             LAST_POLLED=$(date +%s)
-   	    if scan_for_device; then
-    	        manage_service true
-    	    else
-       	        manage_service false
+            if scan_for_device; then
+                manage_service true
+            else
+                manage_service false
         fi
     fi
     log "Waiting for $POLL_INTERVAL seconds before next check..."
