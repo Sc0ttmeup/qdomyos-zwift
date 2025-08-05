@@ -7,13 +7,14 @@ SCAN_FILE="/tmp/qz-treadmill-monitor-btmon.log"
 TARGET_DEVICE="M3"
 POLL_INTERVAL=1             # Time in seconds between checking status of scan and TIMEOUT_INTERVAL intervals
 SCAN_INTERVAL=15            # Time in seconds between searching for TARGET_DEVICE
-TIMEOUT_INTERVAL=60         # Time in seconds before stopping qz service if device not seen
+TIMEOUT_INTERVAL=90         # Time in seconds before stopping qz service if device not seen
 SERVICE_NAME="qz"
 DEBUG_LOG_DIR="/tmp"
 ERROR_MESSAGE="BTLE stateChanged InvalidService"
 LAST_SEEN=0
 LAST_SCANNED=0
-LAST_POLLED=0
+LAST_POLLED=$(date +%s)
+CURRENT_TIME=$(date +%s)
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
@@ -26,6 +27,8 @@ is_service_running() {
 
 scan_for_device() {
     log "Starting Bluetooth scan for $TARGET_DEVICE..."
+
+    LAST_SCANNED=$(date +%s)
 
     bluetoothctl scan on &>/dev/null &
     SCAN_PID=$!
@@ -47,6 +50,7 @@ scan_for_device() {
 
     if [ $DEVICE_FOUND -eq 0 ]; then
         log "Device '$TARGET_DEVICE' found."
+        LAST_SEEN=$(date +%s)
         return 0
     else
         log "Device '$TARGET_DEVICE' not found."
@@ -76,30 +80,27 @@ restart_qz_on_error() {
 }
 
 manage_service() {
-    local device_found=$1
-    local current_time
-    current_time=$(date +%s)
-    if [ $((current_time - LAST_SCANNED)) -ge $TIMEOUT_INTERVAL ]; then
+local device_found=$1
+    if [ $((CURRENT_TIME - LAST_SCANNED)) -ge $SCAN_INTERVAL ]; then
         if $device_found; then
-            LAST_SEEN=$current_time
             if ! is_service_running; then
                 log "***** Starting QZ service... *****"
-                rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
+		rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
                 systemctl start "$SERVICE_NAME"
             else
                 log "QZ service is already running."
                 restart_qz_on_error
             fi
         else
-        log "Device not seen this scan."
+        log "Scan run, but device not detected."
         fi
     fi
 
     # Check if device has not been seen for too long
-    if [ $((current_time - LAST_SEEN)) -ge $TIMEOUT_INTERVAL ]; then
+    if [ $((CURRENT_TIME - LAST_SEEN)) -ge $TIMEOUT_INTERVAL ]; then
         log "Device not seen for more than $TIMEOUT_INTERVAL seconds."
         if is_service_running; then
-            log "***** Stopping QZ service due to TIMEOUT_INTERVAL *****"
+            log "***** Forcing QZ service restart due to TIMEOUT_INTERVAL *****"
             systemctl restart "$SERVICE_NAME"
         else
             log "QZ service is not running; no action taken."
@@ -108,13 +109,16 @@ manage_service() {
 }
 
 while true; do
-    current_time=$(date +%s)
-    if [ $((current_time - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
-        log "Checking for treadmill status..."
-        if scan_for_device; then
-            manage_service true
-        else
-            manage_service false
+    CURRENT_TIME=$(date +%s)
+	if [ $((CURRENT_TIME - LAST_POLLED)) -ge $POLL_INTERVAL ]; then
+	    log "Checking for treadmill status..."
+            LAST_POLLED=$(date +%s)
+   	    if scan_for_device; then
+    	        manage_service true
+    	    else
+       	        manage_service false
         fi
     fi
+    log "Waiting for $POLL_INTERVAL seconds before next check..."
+    sleep "$POLL_INTERVAL"
 done
