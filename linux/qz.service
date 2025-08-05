@@ -3,13 +3,22 @@ Description=qdomyos-zwift service
 After=multi-user.target
 
 [Service]
-Type=idle  
+Type=idle
 Restart=always
 RestartSec=30
-WorkingDirectory=/tmp
-ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -heart-service
-ExecStop=killall -9 qdomyos-zwift
-User=root  
 
-[Install]  
-WantedBy=multi-user.target 
+# Tested, working as line before WorkingDirectory=/tmp:
+# Connected, watts > 0, RPM > 0
+ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -heart-service -no-log
+
+WorkingDirectory=/tmp
+
+# Tested, not working with WorkingDirectory=/tmp as previous line:
+# Connected but 0 watts, 0 RPM
+#ExecStart=/home/foo/qdomyos-zwift/src/qdomyos-zwift -qml -no-gui -heart-service
+
+ExecStop=killall -9 qdomyos-zwift
+User=root
+
+[Install]
+WantedBy=multi-user.target
