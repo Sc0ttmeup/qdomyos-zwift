@@ -84,6 +84,7 @@ manage_service() {
             LAST_SEEN=$current_time
             if ! is_service_running; then
                 log "***** Starting QZ service... *****"
+                rm "$DEBUG_LOG_DIR"/debug-*.log          # Clear previous debug logs
                 systemctl start "$SERVICE_NAME"
             else
                 log "QZ service is already running."
@@ -98,7 +99,7 @@ manage_service() {
     if [ $((current_time - LAST_SEEN)) -ge $TIMEOUT_INTERVAL ]; then
         log "Device not seen for more than $TIMEOUT_INTERVAL seconds."
         if is_service_running; then
-            log "***** Forcing QZ service restart due to TIMEOUT_INTERVAL *****"
+            log "***** Stopping QZ service due to TIMEOUT_INTERVAL *****"
             systemctl restart "$SERVICE_NAME"
         else
             log "QZ service is not running; no action taken."
