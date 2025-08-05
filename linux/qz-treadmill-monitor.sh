@@ -1,15 +1,15 @@
 #!/bin/bash
 
-set -x
+# set -x # Debug output - uncomment to enable
 
 LOG_FILE="/tmp/qz-treadmill-monitor.log"
 SCAN_FILE="/tmp/qz-treadmill-monitor-btmon.log"
-TARGET_DEVICE="M3"
+TARGET_DEVICE="M3"          # Bluetooth name of the treadmill / bike
 POLL_INTERVAL=1             # Time in seconds between checking status of scan and TIMEOUT_INTERVAL intervals
 SCAN_INTERVAL=15            # Time in seconds between searching for TARGET_DEVICE
 TIMEOUT_INTERVAL=90         # Time in seconds before stopping qz service if device not seen
-SERVICE_NAME="qz"
-DEBUG_LOG_DIR="/tmp"
+SERVICE_NAME="qz"           # Name of the service that controls start / stop of qz
+DEBUG_LOG_DIR="/tmp"        # Must match WorkingDirectory in the qz-treadmill-monitor.service file to provide restart_qz_on_error functionality
 ERROR_MESSAGE="BTLE stateChanged InvalidService"
 LAST_SEEN=0
 LAST_SCANNED=0
